@@ -1,0 +1,723 @@
+/* ================================= */
+/* Reset */
+/* ================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ================================= */
+/* Body */
+/* ================================= */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+}
+
+/* ================================= */
+/* Application */
+/* ================================= */
+
+.app {
+  max-width: 430px;
+  min-height: 100vh;
+
+  margin: 0 auto;
+  padding: 16px;
+
+  background: white;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ================================= */
+/* Profile Card */
+/* ================================= */
+
+/*
+    Clickable user profile card.
+
+    Before login:
+    - opens Sign In / Sign Up.
+
+    After login:
+    - opens user profile settings.
+*/
+
+.profile-card {
+  min-height: 80px;
+
+  padding: 12px 16px;
+
+  border: none;
+  border-radius: 20px;
+
+  background: #eeeeee;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  text-align: left;
+
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+.profile-card:hover {
+  background-color: #e8e8e8;
+}
+
+.profile-card:active {
+  transform: scale(0.98);
+}
+/*
+| Profile Information |
+*/
+
+.profile-info {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+| Application Title |
+*/
+
+.profile-title {
+  font-size: 24px;
+  font-weight: 700;
+
+  color: #111111;
+}
+
+.profile-description {
+  margin-top: 2px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  color: #777777;
+}
+
+.profile-arrow {
+  margin-left: auto;
+
+  font-size: 28px;
+  color: #999999;
+}
+/*
+    Placeholder for future user avatar.
+*/
+
+.user-avatar {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 50%;
+
+  background: #dddddd;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+
+  flex-shrink: 0;
+}
+
+/*
+    App title and user status.
+*/
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.user-status {
+  margin-top: 2px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  color: #777777;
+}
+
+/* ================================= */
+/* Balance Card */
+/* ================================= */
+
+.balance-card {
+  width: 100%;
+  min-height: 120px;
+
+  padding: 24px;
+
+  border: none;
+  border-radius: 24px;
+
+  background: #dff6df;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.balance-label {
+  font-size: 16px;
+  color: #2f4f2f;
+}
+
+.balance-amount {
+  margin-top: 8px;
+
+  font-size: 36px;
+  font-weight: 700;
+  color: #123a12;
+}
+/* ================================= */
+/* Income & Expense */
+/* ================================= */
+
+.summary {
+  display: flex;
+  gap: 12px;
+}
+
+.summary-card {
+  flex: 1;
+  min-height: 90px;
+
+  border: none;
+  border-radius: 20px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.summary-card-income {
+  background: #eefbea;
+}
+
+.summary-card-expense {
+  background: #fff0f0;
+}
+
+.summary-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.summary-amount {
+  margin-top: 6px;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ================================= */
+/* Period Selector */
+/* ================================= */
+
+/*
+    Allows the user to switch
+    between different analysis periods.
+*/
+
+.period-selector {
+  display: flex;
+  gap: 8px;
+
+  padding: 6px;
+
+  border-radius: 16px;
+
+  background: #f3f3f3;
+}
+
+/*
+    One period button.
+*/
+
+.period-button {
+  flex: 1;
+
+  padding: 10px 0;
+
+  border: none;
+  border-radius: 12px;
+
+  background: transparent;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+/*
+    Selected period.
+*/
+
+.period-button.active {
+  background: white;
+}
+
+/* ================================= */
+/* Transaction List */
+/* ================================= */
+
+/*
+    Groups transactions
+    by date.
+*/
+
+.transaction-group {
+  margin-top: 16px;
+}
+
+/*
+    Displays the date
+    of the transaction group.
+*/
+
+.transaction-date {
+  margin-bottom: 8px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #777777;
+}
+
+/*
+    One transaction row.
+    The whole row is clickable.
+*/
+
+.transaction-item {
+  width: 100%;
+  min-height: 64px;
+
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 16px;
+
+  background: #f7f7f7;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  cursor: pointer;
+}
+
+.transaction-item + .transaction-item {
+  margin-top: 8px;
+}
+
+/*
+    Placeholder for
+    future category icons.
+*/
+
+.transaction-icon {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  background: #e5e5e5;
+
+  flex-shrink: 0;
+}
+
+/*
+    Transaction content.
+*/
+
+.transaction-info {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-start;
+}
+
+/*
+    Transaction title.
+*/
+
+.transaction-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/*
+    Hidden for the first version.
+
+    Time is stored in HTML and database,
+    but will be displayed in future updates.
+*/
+
+.transaction-time {
+  display: none;
+
+  margin-top: 4px;
+
+  font-size: 12px;
+
+  color: #999999;
+}
+
+/*
+    Displays transaction amount.
+*/
+
+.transaction-amount {
+  font-size: 16px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/*
+    Income amount.
+*/
+
+.transaction-amount.income {
+  color: #1f8f3a;
+}
+
+/*
+    Expense amount.
+*/
+
+.transaction-amount.expense {
+  color: #d33a3a;
+}
+
+/*
+    ISO 4217 currency code.
+
+    Examples:
+    KGS, GBP, USD, EUR.
+*/
+
+.currency-code {
+  margin-left: 4px;
+}
+
+/* ================================= */
+/* Empty State */
+/* ================================= */
+
+/*
+    Displayed when
+    there are no transactions.
+*/
+
+.empty-state {
+  margin-top: 16px;
+
+  padding: 24px;
+
+  border-radius: 20px;
+
+  background: #f7f7f7;
+
+  text-align: center;
+}
+
+/*
+    Empty state title.
+*/
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/*
+    Empty state description.
+*/
+
+.empty-state-text {
+  margin-top: 8px;
+
+  font-size: 14px;
+
+  color: #777777;
+}
+
+/* ================================= */
+/* Bottom Navigation */
+/* ================================= */
+
+/*
+    Main application navigation.
+*/
+
+.bottom-nav {
+  height: 70px;
+
+  display: flex;
+  gap: 8px;
+
+  padding: 8px;
+
+  border-radius: 20px;
+
+  background: #f3f3f3;
+}
+
+.nav-button {
+  flex: 1;
+
+  border: none;
+  border-radius: 16px;
+
+  background: transparent;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.nav-button.active {
+  background: white;
+}
+
+.nav-icon {
+  font-size: 20px;
+}
+
+.nav-label {
+  margin-top: 4px;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+/*
+    Hidden for the first version.
+
+    Time is stored in HTML and database,
+    but will be displayed in future updates.
+*/
+
+.transaction-time {
+  display: none;
+}
+/*
+    ISO 4217 currency code.
+    Examples:
+    KGS, GBP, USD, EUR.
+*/
+
+.currency-code {
+  margin-left: 4px;
+}
+/* ===========================
+   Modal
+=========================== */
+
+.modal {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  z-index: 1000;
+}
+
+.modal-content {
+  position: relative;
+  width: 90%;
+  max-width: 360px;
+
+  background: white;
+
+  border-radius: 20px;
+
+  padding: 24px;
+
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.modal-text {
+  margin-top: 8px;
+
+  font-size: 15px;
+  color: #666666;
+}
+
+.modal-actions {
+  margin-top: 20px;
+
+  display: flex;
+  gap: 12px;
+}
+
+.modal-button {
+  flex: 1;
+
+  padding: 12px;
+
+  border: none;
+  border-radius: 14px;
+
+  background: #eeeeee;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+
+  width: 32px;
+  height: 32px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #eeeeee;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.modal-button.primary {
+  background: #dff6df;
+}
+.modal-input {
+  width: 100%;
+
+  padding: 12px 14px;
+  margin-bottom: 12px;
+
+  border: 1px solid #dddddd;
+  border-radius: 14px;
+
+  font-size: 15px;
+
+  outline: none;
+  box-sizing: border-box;
+
+  transition: border-color 0.2s ease;
+}
+
+.modal-input {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  border: 1px solid #dddddd;
+  border-radius: 14px;
+
+  font-size: 15px;
+
+  outline: none;
+  box-sizing: border-box;
+
+  transition: border-color 0.2s ease;
+}
+.form-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+
+  font-size: 13px;
+  font-weight: 600;
+  color: #555555;
+}
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+
+  top: 50%;
+  right: 14px;
+
+  transform: translateY(-50%);
+
+  width: 32px;
+  height: 32px;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.password-wrapper .modal-input {
+  padding-right: 48px;
+}
+
+.form-error {
+  margin-top: 10px;
+
+  min-height: 18px;
+
+  font-size: 13px;
+  font-weight: 600;
+  color: #c0392b;
+}
+
+/* Кнопка опасного действия: удаление операции */
+.modal-button.danger {
+  margin-top: 12px;
+
+  background: #ffe5e5;
+  color: #c62828;
+}

@@ -1,0 +1,363 @@
+# Архитектурные решения
+
+## 2026-07-03
+
+### Главный экран
+
+- Верхняя карточка отображает остаток за выбранный период.
+- Цвет верхней карточки зависит от Money Mood.
+- Карточки "Доход" и "Расход" одновременно являются кнопками добавления операций.
+- Один переключатель периода используется для:
+  - отображения списка операций;
+  - расчёта доходов и расходов;
+  - расчёта остатка;
+  - определения цвета Money Mood.
+
+# Decisions
+
+## 2026-07-03 — Main screen architecture
+
+### General idea
+
+MyBudget is a simple budget tracker for beginners.
+
+The main screen answers one question:
+
+**How is my money situation for the selected period?**
+
+---
+
+### Period switcher
+
+The app uses one main period switcher:
+
+- Week
+- Month
+- Year
+- All time
+
+The selected period controls:
+
+- the text in the top card;
+- the date range;
+- income amount;
+- expense amount;
+- period balance;
+- transaction list;
+- Money Mood color.
+
+---
+
+### Top card
+
+The top card shows:
+
+- selected period name;
+- remaining amount for this period;
+- date range;
+- Money Mood visual state.
+
+Example:
+
+```text
+Остаток за неделю
+3 500 ₽
+8 мая — 14 мая 2026
+
+
+Only the top card changes color according to Money Mood.
+
+The full screen background does not change color.
+
+Income and expense cards
+
+The income and expense cards have two roles:
+
+Show total income and expense for the selected period.
+Work as buttons for adding a new transaction.
+
+Income card opens the income form.
+
+Expense card opens the expense form.
+
+Transaction list
+
+The list shows only transactions from the selected period.
+
+Transactions are grouped by date.
+
+Income is green.
+
+Expense is red.
+
+Bottom navigation
+
+MVP navigation:
+
+Main
+Savings
+Statistics
+Settings
+```
+
+## 2026-07-03 — Balance adjustment
+
+The balance card can be manually adjusted.
+
+If the user edits the displayed balance, the application calculates the difference between the current balance and the entered balance.
+
+The difference is automatically saved as a transaction.
+
+Examples:
+
+Current balance: 3500
+New balance: 3200
+
+↓
+
+Expense 300
+Note: "Adjustment"
+
+---
+
+Current balance: 3500
+New balance: 3800
+
+↓
+
+Income 300
+Note: "Adjustment"
+
+The user never edits the database balance directly.
+
+The balance is always changed through automatically created transactions.
+
+Adjustment transactions are shown in the transaction history like normal transactions.
+
+They are not hidden.
+
+Reason:
+
+The user must clearly see why the balance changed.
+
+Adjustments are part of the financial history.
+
+---
+
+# Transactions
+
+Path:
+
+```text
+users/{userId}/transactions/{transactionId}
+Purpose
+
+Transactions store all income and expense records of one user.
+
+Each user has their own transactions collection.
+```
+
+### Transaction editing
+
+Transactions must have visually available editing.
+
+Long press is not used because the app is a website and must work clearly on mobile and desktop.
+
+Each transaction item shows an edit button.
+
+Clicking the edit button opens the transaction edit form.
+
+If the note is empty, the interface displays the transaction type:
+
+- Income
+- Expense
+
+The database can store an empty note.
+
+## note: ""
+
+## Transaction form
+
+Income and expense use the same form.
+
+The form works in two modes:
+
+- income
+- expense
+
+The user opens income form by clicking the income card.
+
+The user opens expense form by clicking the expense card.
+
+Required field:
+
+- amount
+
+Optional field:
+
+- note
+
+Automatic field:
+
+- transaction date and time
+
+The transaction date and time are set to the current moment by default.
+
+The user can manually edit date and time.
+
+The user does not manually select transaction type inside the form.
+
+The type is defined by the button that opened the form.
+
+# MyBudget
+
+## Mission
+
+Make personal finance tracking so simple that adding a transaction takes only a few seconds.
+
+The application should never force the user to enter information that is not necessary at that moment.
+
+Simple actions must always remain simple.
+
+## Transaction screen
+
+Transaction creation uses a dedicated screen.
+
+The main screen never contains transaction input fields.
+
+The transaction screen has two modes:
+
+- Add Income
+- Add Expense
+
+The layout is identical.
+
+Only the title, accent color and transaction type change.
+
+After saving, the user automatically returns to the main screen.
+
+### MVP Rule
+
+A feature is included in the first version only if it helps the user complete the main task.
+
+Future functionality may be prepared in the architecture, but it should not appear in the interface until it becomes useful.
+
+## Initial currency selection
+
+The application does not ask for currency during registration.
+
+Currency is requested only before the first financial transaction.
+
+A transaction can be:
+
+- Income
+- Expense
+- Balance adjustment
+
+After the user selects a currency, it is stored in user settings and automatically applied to all new transactions.
+
+The currency can be changed later in Settings.
+
+Previous transactions keep their original currency.
+
+## Transaction deletion
+
+When the user deletes a transaction, the app shows a temporary message:
+
+"Операция удалена"
+
+The message includes an Undo button:
+
+"Отменить"
+
+The Undo action is available for 5 seconds.
+
+If the user clicks Undo, the transaction is restored.
+
+If the user does not click Undo within 5 seconds, the deletion becomes final.
+
+MVP does not include a trash bin.
+
+## Transaction editing
+
+The same transaction screen is used for creating and editing transactions.
+
+Modes:
+
+- create-income
+- create-expense
+- edit
+
+In edit mode, the user can change:
+
+- amount
+- note
+- transaction date
+- transaction time
+
+Changing transaction type is not included in MVP.
+
+If the user created the wrong transaction type, they can delete it and create a new one.
+
+## Smart notes MVP
+
+The app saves transaction notes automatically.
+
+When the user starts typing in the note field, the app shows matching saved notes.
+
+Example:
+
+User types: "Б"
+
+Suggestion: "Бензин"
+
+MVP does not show separate sections for recent or popular notes.
+
+The architecture stores usageCount and lastUsedAt for future improvements.
+
+## Current Balance
+
+The current balance is independent of the selected period.
+
+It always represents the user's actual available money.
+
+Only income, expense, transaction history and financial mood depend on the selected period.
+
+## Balance and period logic
+
+The top balance card shows the current balance.
+
+Current balance is calculated from all transactions and does not depend on the selected period.
+
+The period selector affects only:
+
+- income amount;
+- expense amount;
+- transaction list;
+- period analytics;
+- Money Mood.
+
+Period balance is not the same as current balance.
+
+Current balance answers:
+
+"How much money do I have now?"
+
+Period analytics answers:
+
+"What happened during this period?"
+
+## Money values
+
+Every money value consists of two independent parts:
+
+- amount — numeric value;
+- currency — ISO 4217 currency code.
+
+Example:
+
+15000 KGS
+
+The app does not use currency names that require grammatical declension, such as "сом", "сома", "сомов".
+
+This keeps the interface simple and prepares the app for multiple currencies.

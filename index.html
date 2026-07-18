@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>MyBudget</title>
+
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+
+  <body>
+    <div class="app">
+
+<!-- ================================= -->
+<!-- Profile Card -->
+<!-- ================================= -->
+
+<button
+    class="profile-card"
+    type="button"
+    data-action="open-profile">
+
+    <!-- User Avatar -->
+    <span class="user-avatar" aria-hidden="true">
+        👤
+    </span>
+
+    <!-- Profile Information -->
+    <span class="profile-info">
+
+        <span class="app-title">
+            MyBudget
+        </span>
+
+        <span class="profile-subtitle">
+            Проверяем вход...
+        </span>
+
+    </span>
+
+    <!-- Arrow -->
+    <span class="profile-arrow" aria-hidden="true">
+        ›
+    </span>
+
+</button>
+</button>
+      <!-- Balance Card -->
+      <button class="balance-card" type="button">
+        <span class="balance-label">Текущий остаток</span>
+
+        <span class="balance-amount">
+            <span class="amount-value" data-role="balance-value">0</span>
+            <span class="currency-code">KGS</span>
+        </span>
+      </button>
+
+<!-- Income & Expense -->
+<section class="summary">
+
+  <button
+      class="summary-card summary-card-income"
+      type="button"
+      data-action="open-income">
+
+      <span class="summary-label">
+          Доход
+      </span>
+
+      <span class="summary-amount">
+        <span class="amount-value" data-role="income-value">0</span>
+        <span class="currency-code">KGS</span>
+      </span>
+
+  </button>
+
+  <button
+      class="summary-card summary-card-expense"
+      type="button"
+      data-action="open-expense">
+
+      <span class="summary-label">
+          Расход
+      </span>
+
+      <span class="summary-amount">
+        <span class="amount-value" data-role="expense-value">0</span>
+        <span class="currency-code">KGS</span>
+      </span>
+
+  </button>
+
+</section>
+
+      <!-- Period Selector -->
+<section class="period-selector">
+  <button
+    class="period-button active"
+    type="button"
+    data-period="week"
+  >
+    Неделя
+  </button>
+
+  <button
+    class="period-button"
+    type="button"
+    data-period="month"
+  >
+    Месяц
+  </button>
+
+  <button
+    class="period-button"
+    type="button"
+    data-period="year"
+  >
+    Год
+  </button>
+
+  <button
+    class="period-button"
+    type="button"
+    data-period="all"
+  >
+    Всё
+  </button>
+</section>
+
+    
+      <!-- Transaction List -->
+<!-- ================================= -->
+<!-- Transactions -->
+<!-- ================================= -->
+
+<main class="transactions">
+
+  <!-- Заголовок раздела -->
+  <h2 class="transactions-title">
+    Операции
+  </h2>
+
+  <!-- Группа операций за сегодня -->
+  <section class="transaction-group">
+
+    <!-- Дата группы -->
+    <h3 class="transaction-date">
+      Сегодня
+    </h3>
+
+    <!--
+      JavaScript будет автоматически добавлять
+      сюда созданные доходы и расходы.
+    -->
+    <div
+      class="transactions-list"
+      data-role="transactions-list">
+    </div>
+
+  </section>
+
+</main>
+     <!-- Bottom Navigation -->
+<nav class="bottom-nav">
+
+    <button class="nav-button active" type="button">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Главная</span>
+    </button>
+
+    <button class="nav-button" type="button">
+        <span class="nav-icon">🎯</span>
+        <span class="nav-label">Копилка</span>
+    </button>
+
+    <button class="nav-button" type="button">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Статистика</span>
+    </button>
+
+    <button class="nav-button" type="button">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Настройки</span>
+    </button>
+
+</nav>
+</div>
+    <!-- =========================================
+     Modals
+========================================= -->
+
+<div id="modal-root"></div>
+<!-- =========================================
+     Templates
+========================================= -->
+
+<template id="profile-modal-template">
+    <div class="modal">
+        <div class="modal-content">
+            <button class="modal-close" type="button" data-action="close-modal">
+                ×
+            </button>
+
+            <h2 class="modal-title">
+                Профиль
+            </h2>
+
+            <p class="modal-text">
+                Вы ещё не вошли.
+            </p>
+
+            <div class="modal-actions">
+                <button
+                    class="modal-button primary"
+                    type="button"
+                    data-action="open-login">
+                    Войти
+                </button>
+
+                <button
+                    class="modal-button"
+                    type="button"
+                    data-action="open-register">
+                    Регистрация
+                </button>
+
+                <button
+                    class="modal-button"
+                    type="button"
+                    data-action="logout">
+                    Выйти
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+<template id="login-modal-template">
+
+    <div class="modal">
+
+        <div class="modal-content">
+
+            <button class="modal-close" type="button" data-action="close-modal">
+                ×
+            </button>
+
+            <h2 class="modal-title">
+                Вход
+            </h2>
+
+            <p class="modal-text">
+                Войдите с помощью email и пароля.
+            </p>
+
+            <form class="auth-form" data-form="login">
+
+                <label class="form-field">
+
+                    <span class="form-label">
+                        Email
+                    </span>
+
+                    <input
+                        id="login-email"
+                        class="modal-input"
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        required>
+
+                </label>
+
+   <label class="form-field">
+    <span class="form-label">
+        Пароль
+    </span>
+
+    <div class="password-wrapper">
+        <input
+            id="login-password"
+            class="modal-input"
+            name="password"
+            type="password"
+            placeholder="Введите пароль"
+            autocomplete="current-password"
+            required>
+
+        <button
+            class="password-toggle"
+            type="button"
+            data-action="toggle-password"
+            data-target="login-password">
+            👁️
+        </button>
+    </div>
+</label>
+                <button
+                    id="login-button"
+                    class="modal-button primary"
+                    type="submit"
+                    data-action="submit-login">
+
+                    Войти
+
+                </button>
+
+<p class="form-error" data-role="form-error"></p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</template>
+
+<template id="register-modal-template">
+
+    <div class="modal">
+
+        <div class="modal-content">
+
+            <button class="modal-close" type="button" data-action="close-modal">
+                ×
+            </button>
+
+            <h2 class="modal-title">
+                Регистрация
+            </h2>
+
+            <p class="modal-text">
+                Создайте аккаунт с помощью email и пароля.
+            </p>
+
+            <form class="auth-form" data-form="register">
+
+                <label class="form-field">
+
+                    <span class="form-label">
+                        Email
+                    </span>
+
+                    <input
+                        id="register-email"
+                        class="modal-input"
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        required>
+
+                </label>
+
+                <label class="form-field">
+
+                    <span class="form-label">
+                        Пароль
+                    </span>
+
+<div class="password-wrapper">
+
+    <input
+        id="register-password"
+        class="modal-input"
+        name="password"
+        type="password"
+        placeholder="Минимум 6 символов"
+        autocomplete="new-password"
+        required>
+
+    <button
+        class="password-toggle"
+        type="button"
+        data-action="toggle-password"
+        data-target="register-password">
+
+        👁️
+
+    </button>
+
+</div>
+
+                </label>
+
+                <button
+                    class="modal-button primary"
+                    type="submit">
+
+                    Зарегистрироваться
+
+                </button>
+
+<p class="form-error" data-role="form-error"></p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</template>
+
+<template id="transaction-modal-template">
+    <div class="modal">
+        <div class="modal-content">
+            <button class="modal-close" type="button" data-action="close-modal">
+                ×
+            </button>
+
+            <h2 class="modal-title" data-role="transaction-title">
+                Новая операция
+            </h2>
+
+            <form class="transaction-form" data-form="transaction">
+                <label class="form-field">
+                    <span class="form-label">
+                        Сумма
+                    </span>
+
+                    <input
+                        class="modal-input"
+                        name="amount"
+                        type="number"
+                        inputmode="decimal"
+                        placeholder="0"
+                        required>
+                </label>
+
+                <label class="form-field">
+                    <span class="form-label">
+                        Заметка
+                    </span>
+
+                    <input
+                        class="modal-input"
+                        name="title"
+                        type="text"
+                        placeholder="Например: зарплата, продукты, бензин">
+                </label>
+
+                <button
+                    class="modal-button primary"
+                    type="submit">
+                    Сохранить
+                </button>
+            </form>
+        </div>
+    </div>
+</template>
+
+<script type="module" src="js/app.js"></script>    
+  </body>
+</html>
