@@ -1,3 +1,92 @@
+import { auth, db } from "../firebase/firebase-config.js";
+
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  addDoc,
+  deleteDoc,
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+// ======================================================
+// Возвращает коллекцию операций текущего пользователя.
+//
+// Структура Firestore:
+//
+// users
+//   └── UID
+//        └── transactions
+//             └── transactionId
+// ======================================================
+
+function getTransactionsCollection() {
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("Пользователь не авторизован.");
+  }
+
+  return collection(db, "users", user.uid, "transactions");
+}
+
+// ======================================================
+// Загружает операции текущего пользователя из Firestore.
+// После загрузки обновляет массив и интерфейс.
+// ======================================================
+
+async function loadTransactionsFromFirestore() {
+  try {
+    const snapshot = await getDocs(getTransactionsCollection());
+
+    const loadedTransactions = [];
+
+    snapshot.forEach((documentSnapshot) => {
+      loadedTransactions.push({
+        ...documentSnapshot.data(),
+        id: documentSnapshot.id,
+      });
+    });
+
+    // Новые операции показываем сверху.
+    loadedTransactions.sort((firstTransaction, secondTransaction) => {
+      const firstDateTime = `${firstTransaction.date} ${firstTransaction.time}`;
+      const secondDateTime = `${secondTransaction.date} ${secondTransaction.time}`;
+
+      return secondDateTime.localeCompare(firstDateTime);
+    });
+
+    // Не создаём новый массив, а очищаем существующий.
+    transactions.splice(0, transactions.length, ...loadedTransactions);
+
+    renderSummary();
+    renderTransactions();
+
+    console.log("Transactions loaded from Firestore:", transactions);
+
+    return true;
+  } catch (error) {
+    console.error("Firestore loading error:", error);
+    return false;
+  }
+}
+
+// ======================================================
+// Очищает операции после выхода пользователя.
+// ======================================================
+
+function clearTransactions() {
+  transactions.splice(0, transactions.length);
+
+  renderSummary();
+  renderTransactions();
+}
+
+// ======================================================
+// Загружает все операции текущего пользователя из Firestore.
+// ======================================================
+
 /*
   Transactions module.
 
@@ -10,9 +99,7 @@
 */
 // Загружаем ранее сохранённые операции из браузера.
 // Если сохранённых данных нет, используем пустой массив.
-const transactions =
-  JSON.parse(localStorage.getItem("mybudget-transactions")) || [];
-
+let transactions = [];
 let currentTransactionType = null;
 
 let currentPeriod = "all";
@@ -69,13 +156,17 @@ function getFilteredTransactions() {
   }
 */
 
-function addTransaction(transaction) {
-  transactions.unshift(transaction);
+async function addTransaction(transaction) {
+  try {
+    await addDoc(getTransactionsCollection(), transaction);
 
-  // После изменения массива сразу сохраняем его в браузере.
-  saveTransactions();
+    await loadTransactionsFromFirestore();
+
+    console.log("Transaction saved to Firestore");
+  } catch (error) {
+    console.error("Firestore save error:", error);
+  }
 }
-
 /*
   Returns all transactions.
 
@@ -92,64 +183,60 @@ function getTransactionById(id) {
 }
 
 /*
-/*
   Обновляет только сумму и заметку существующей операции.
 
   Тип операции, дата, время, валюта и ID
   остаются без изменений.
 */
-function updateTransaction(id, updatedData) {
-  const transaction = getTransactionById(id);
+async function updateTransaction(id, updatedData) {
+  try {
+    const transactionRef = doc(getTransactionsCollection(), id);
 
-  // Если операция с таким ID не найдена,
-  // прекращаем выполнение функции.
-  if (!transaction) {
-    console.error("Transaction not found:", id);
+    await updateDoc(transactionRef, {
+      amount: updatedData.amount,
+      title: updatedData.title,
+    });
+
+    await loadTransactionsFromFirestore();
+
+    console.log("Transaction updated in Firestore:", id);
+
+    return true;
+  } catch (error) {
+    console.error("Firestore update error:", error);
     return false;
   }
-
-  // Изменяем только разрешённые поля.
-  transaction.amount = updatedData.amount;
-  transaction.title = updatedData.title;
-
-  // Сохраняем обновлённый массив в localStorage.
-  saveTransactions();
-
-  return true;
 }
 
 /*
   Удаляет операцию по её ID.
 */
-function deleteTransaction(id) {
-  // Ищем индекс операции в массиве.
-  const transactionIndex = transactions.findIndex(
-    (transaction) => transaction.id === id,
-  );
+async function deleteTransaction(id) {
+  try {
+    const transactionRef = doc(getTransactionsCollection(), id);
 
-  // Если операция не найдена, возвращаем false.
-  if (transactionIndex === -1) {
-    console.error("Transaction not found:", id);
+    await deleteDoc(transactionRef);
+
+    await loadTransactionsFromFirestore();
+
+    console.log("Transaction deleted from Firestore:", id);
+
+    return true;
+  } catch (error) {
+    console.error("Firestore delete error:", error);
     return false;
   }
-
-  // Удаляем одну операцию из массива.
-  transactions.splice(transactionIndex, 1);
-
-  // Сохраняем обновлённый массив в localStorage.
-  saveTransactions();
-
-  return true;
 }
 
 /*
-  Сохраняет текущий массив операций в localStorage.
+Все операции теперь хранятся в Firestore.
 
-  localStorage хранит данные в браузере даже после
-  обновления страницы или закрытия вкладки.
+Массив transactions содержит только
+данные, загруженные из облака.
 */
+
 function saveTransactions() {
-  localStorage.setItem("mybudget-transactions", JSON.stringify(transactions));
+  console.log("saveTransactions(): Firestore mode");
 }
 
 /*
@@ -285,7 +372,7 @@ function openTransactionDetails(transaction) {
 /*
   Обрабатывает форму создания или редактирования операции.
 */
-function handleTransactionSubmit(event) {
+async function handleTransactionSubmit(event) {
   // Не разрешаем браузеру перезагружать страницу.
   event.preventDefault();
 
@@ -309,7 +396,7 @@ function handleTransactionSubmit(event) {
 
   if (transactionId) {
     // Редактируем существующую операцию.
-    updateTransaction(transactionId, {
+    await updateTransaction(transactionId, {
       amount,
       title,
     });
@@ -327,7 +414,7 @@ function handleTransactionSubmit(event) {
       time: now.toTimeString().slice(0, 5),
     };
 
-    addTransaction(transaction);
+    await addTransaction(transaction);
   }
 
   // Обновляем итоговые суммы и список операций.
@@ -389,8 +476,7 @@ function renderTransactions() {
   }
 }
 
-renderSummary();
-renderTransactions();
+clearTransactions();
 
 export {
   addTransaction,
@@ -405,4 +491,6 @@ export {
   renderTransactions,
   setCurrentPeriod,
   getFilteredTransactions,
+  loadTransactionsFromFirestore,
+  clearTransactions,
 };

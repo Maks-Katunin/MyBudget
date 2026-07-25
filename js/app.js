@@ -1,4 +1,4 @@
-import { auth } from "../firebase/firebase-config.js";
+import { auth, db } from "../firebase/firebase-config.js";
 
 import {
   signInWithEmailAndPassword,
@@ -6,6 +6,13 @@ import {
   onAuthStateChanged,
   signOut,
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
 import {
   openTransactionModal,
@@ -16,9 +23,56 @@ import {
   renderSummary,
   renderTransactions,
   setCurrentPeriod,
+  loadTransactionsFromFirestore,
+  clearTransactions,
 } from "./transactions.js";
 
 let currentUser = null;
+
+// ======================================================
+// Создаёт профиль пользователя в Firestore,
+// если такого документа ещё нет.
+//
+// Путь:
+// users/{uid}
+// ======================================================
+async function ensureUserProfile(user) {
+  if (!user) {
+    return null;
+  }
+
+  const userRef = doc(db, "users", user.uid);
+  const userSnapshot = await getDoc(userRef);
+
+  // Если профиль уже существует, просто возвращаем его данные.
+  if (userSnapshot.exists()) {
+    const profile = {
+      id: userSnapshot.id,
+      ...userSnapshot.data(),
+    };
+
+    console.log("User profile loaded:", profile);
+
+    return profile;
+  }
+
+  // Создаём профиль только при первом входе.
+  const newProfile = {
+    email: user.email || "",
+    displayName: user.displayName || "",
+    currency: "KGS",
+    createdAt: serverTimestamp(),
+  };
+
+  await setDoc(userRef, newProfile);
+
+  console.log("User profile created:", user.uid);
+
+  return {
+    id: user.uid,
+    ...newProfile,
+  };
+}
 
 // ======================================================
 // Следим за состоянием авторизации пользователя.
@@ -31,15 +85,20 @@ let currentUser = null;
 // Firebase сам сообщает приложению,
 // вошёл пользователь или нет.
 // ======================================================
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   currentUser = user;
 
   updateProfileCard(user);
 
   if (user) {
     console.log("Пользователь авторизован:", user.email);
+
+    await ensureUserProfile(user);
+    await loadTransactionsFromFirestore();
   } else {
     console.log("Пользователь не вошёл.");
+
+    clearTransactions();
   }
 });
 
