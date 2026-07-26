@@ -17,6 +17,7 @@ import {
 import {
   openTransactionModal,
   handleTransactionSubmit,
+  getTransactions,
   getTransactionById,
   openTransactionDetails,
   deleteTransaction,
@@ -25,6 +26,8 @@ import {
   setCurrentPeriod,
   loadTransactionsFromFirestore,
   clearTransactions,
+  getCurrentBalance,
+  createBalanceAdjustment,
 } from "./transactions.js";
 
 let currentUser = null;
@@ -61,6 +64,7 @@ async function ensureUserProfile(user) {
     email: user.email || "",
     displayName: user.displayName || "",
     currency: "KGS",
+    balanceInitialized: false,
     createdAt: serverTimestamp(),
   };
 
@@ -72,6 +76,84 @@ async function ensureUserProfile(user) {
     id: user.uid,
     ...newProfile,
   };
+}
+
+// ======================================================
+// Предлагает указать начальный остаток.
+//
+// Окно показывается только один раз:
+// пока в профиле пользователя balanceInitialized !== true.
+// ======================================================
+async function setupInitialBalance(user, profile) {
+  if (!user) {
+    return;
+  }
+
+  // Начальный остаток уже был настроен.
+  if (profile?.balanceInitialized === true) {
+    return;
+  }
+
+  const existingTransactions = getTransactions();
+
+  // Поддержка пользователей, которые начали пользоваться
+  // приложением до появления функции начального остатка.
+  if (existingTransactions.length > 0) {
+    const userRef = doc(db, "users", user.uid);
+
+    await setDoc(
+      userRef,
+      {
+        balanceInitialized: true,
+      },
+      {
+        merge: true,
+      },
+    );
+
+    return;
+  }
+
+  const enteredValue = prompt("Введите сумму, которая у вас есть сейчас:", "0");
+
+  // Пользователь нажал «Отмена».
+  // В следующий раз приложение снова предложит настройку.
+  if (enteredValue === null) {
+    return;
+  }
+
+  const initialBalance = Number(enteredValue.replace(",", "."));
+
+  if (!Number.isFinite(initialBalance) || initialBalance < 0) {
+    alert("Введите корректную сумму.");
+    return;
+  }
+
+  try {
+    // При нулевом остатке операция не нужна.
+    if (initialBalance > 0) {
+      await createBalanceAdjustment(initialBalance, "Начальный остаток");
+    }
+
+    const userRef = doc(db, "users", user.uid);
+
+    // Запоминаем, что первоначальная настройка завершена.
+    await setDoc(
+      userRef,
+      {
+        balanceInitialized: true,
+      },
+      {
+        merge: true,
+      },
+    );
+
+    console.log("Initial balance initialized:", initialBalance);
+  } catch (error) {
+    console.error("Initial balance error:", error);
+
+    alert("Не удалось сохранить начальный остаток.");
+  }
 }
 
 // ======================================================
@@ -93,8 +175,13 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log("Пользователь авторизован:", user.email);
 
-    await ensureUserProfile(user);
-    await loadTransactionsFromFirestore();
+    const profile = await ensureUserProfile(user);
+
+    const transactionsLoaded = await loadTransactionsFromFirestore();
+
+    if (transactionsLoaded) {
+      await setupInitialBalance(user, profile);
+    }
   } else {
     console.log("Пользователь не вошёл.");
 
@@ -108,7 +195,7 @@ profileCard.addEventListener("click", () => {
   openProfile();
 });
 
-document.addEventListener("click", (event) => {
+document.addEventListener("click", async (event) => {
   // Закрыть окно
   if (event.target.dataset.action === "close-modal") {
     closeModal();
@@ -151,6 +238,55 @@ document.addEventListener("click", (event) => {
   // Открыть окно добавления расхода
   if (event.target.closest("[data-action='open-expense']")) {
     openTransactionModal("expense");
+
+    return;
+  }
+
+  // Открыть корректировку текущего баланса
+  if (event.target.closest('[data-action="open-balance-adjustment"]')) {
+    // Корректировать баланс можно только после входа.
+    if (!currentUser) {
+      alert("Сначала войдите или зарегистрируйтесь.");
+      openProfile();
+      return;
+    }
+
+    const calculatedBalance = getCurrentBalance();
+
+    const enteredValue = prompt(
+      "Введите сумму, которая у вас есть сейчас:",
+      calculatedBalance,
+    );
+
+    // Пользователь нажал «Отмена».
+    if (enteredValue === null) {
+      return;
+    }
+
+    // Разрешаем ввод с запятой: 12500,50
+    const actualBalance = Number(enteredValue.replace(",", "."));
+
+    if (!Number.isFinite(actualBalance) || actualBalance < 0) {
+      alert("Введите корректную сумму.");
+      return;
+    }
+
+    try {
+      const result = await createBalanceAdjustment(
+        actualBalance,
+        "Корректировка",
+      );
+
+      if (!result.created) {
+        alert("Баланс уже совпадает. Корректировка не требуется.");
+        return;
+      }
+
+      console.log("Balance adjustment created:", result);
+    } catch (error) {
+      console.error("Balance adjustment error:", error);
+      alert("Не удалось скорректировать баланс.");
+    }
 
     return;
   }

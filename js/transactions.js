@@ -102,6 +102,10 @@ function clearTransactions() {
 let transactions = [];
 let currentTransactionType = null;
 
+// Показывает, выполняется ли сейчас сохранение операции.
+// Нужен для защиты от повторных быстрых нажатий.
+let isSaving = false;
+
 let currentPeriod = "all";
 
 /*
@@ -180,6 +184,73 @@ function getTransactions() {
 
 function getTransactionById(id) {
   return transactions.find((transaction) => transaction.id === id);
+}
+
+/*
+  Возвращает текущий баланс пользователя.
+*/
+function getCurrentBalance() {
+  let balance = 0;
+
+  transactions.forEach((transaction) => {
+    if (transaction.type === "income") {
+      balance += transaction.amount;
+    }
+
+    if (transaction.type === "expense") {
+      balance -= transaction.amount;
+    }
+  });
+
+  return balance;
+}
+
+/*
+  Создаёт операцию, которая приводит расчётный баланс
+  к фактическому балансу пользователя.
+
+  actualBalance — реальная сумма пользователя.
+  title — название операции:
+  "Начальный остаток" или "Корректировка".
+*/
+async function createBalanceAdjustment(actualBalance, title) {
+  const calculatedBalance = getCurrentBalance();
+
+  // Находим разницу между реальным
+  // и рассчитанным балансом.
+  const difference = actualBalance - calculatedBalance;
+
+  // Если значения совпадают,
+  // создавать новую операцию не нужно.
+  if (difference === 0) {
+    return {
+      created: false,
+      reason: "balance-is-correct",
+    };
+  }
+
+  const now = new Date();
+
+  const adjustmentTransaction = {
+    type: difference > 0 ? "income" : "expense",
+
+    // Сумма всегда хранится положительным числом.
+    // Направление задаётся через type.
+    amount: Math.abs(difference),
+
+    currency: "KGS",
+    title,
+
+    date: now.toISOString().slice(0, 10),
+    time: now.toTimeString().slice(0, 5),
+  };
+
+  await addTransaction(adjustmentTransaction);
+
+  return {
+    created: true,
+    difference,
+  };
 }
 
 /*
@@ -274,7 +345,7 @@ function renderSummary() {
     }
   });
 
-  const balance = allIncomeTotal - allExpenseTotal;
+  const balance = getCurrentBalance();
 
   const incomeValue = document.querySelector('[data-role="income-value"]');
 
@@ -383,49 +454,81 @@ async function handleTransactionSubmit(event) {
   const amount = Number(formData.get("amount"));
   const title = formData.get("title").trim() || "Без заметки";
 
-  // Проверяем сумму.
+  // Сначала проверяем сумму.
   if (!Number.isFinite(amount) || amount <= 0) {
     alert("Введите сумму больше нуля.");
     return;
   }
 
-  // Этот ID существует только при редактировании.
-  const transactionId = form.dataset.transactionId;
-
-  console.log("Editing ID:", transactionId);
-
-  if (transactionId) {
-    // Редактируем существующую операцию.
-    await updateTransaction(transactionId, {
-      amount,
-      title,
-    });
-  } else {
-    // Создаём новую операцию.
-    const now = new Date();
-
-    const transaction = {
-      id: crypto.randomUUID(),
-      type: currentTransactionType,
-      amount,
-      currency: "KGS",
-      title,
-      date: now.toISOString().slice(0, 10),
-      time: now.toTimeString().slice(0, 5),
-    };
-
-    await addTransaction(transaction);
+  // Если сохранение уже выполняется,
+  // повторное нажатие ничего не делает.
+  if (isSaving) {
+    return;
   }
 
-  // Обновляем итоговые суммы и список операций.
-  renderSummary();
-  renderTransactions();
+  // Отмечаем, что сохранение началось.
+  isSaving = true;
 
-  // Закрываем модальное окно.
-  const root = document.querySelector("#modal-root");
-  root.replaceChildren();
+  // Находим кнопку сохранения.
+  const submitButton = form.querySelector('[type="submit"]');
 
-  console.log("All transactions:", getTransactions());
+  // Запоминаем исходный текст кнопки.
+  const originalButtonText = submitButton.textContent;
+
+  // Блокируем кнопку.
+  submitButton.disabled = true;
+
+  // Включаем режим загрузки.
+  submitButton.classList.add("loading");
+  try {
+    // Этот ID существует только при редактировании.
+    const transactionId = form.dataset.transactionId;
+
+    console.log("Editing ID:", transactionId);
+
+    if (transactionId) {
+      // Редактируем существующую операцию.
+      await updateTransaction(transactionId, {
+        amount,
+        title,
+      });
+    } else {
+      // Создаём новую операцию.
+      const now = new Date();
+
+      const transaction = {
+        id: crypto.randomUUID(),
+        type: currentTransactionType,
+        amount,
+        currency: "KGS",
+        title,
+        date: now.toISOString().slice(0, 10),
+        time: now.toTimeString().slice(0, 5),
+      };
+
+      await addTransaction(transaction);
+    }
+
+    // Закрываем модальное окно только после успешного сохранения.
+    const root = document.querySelector("#modal-root");
+    root.replaceChildren();
+
+    console.log("All transactions:", getTransactions());
+  } catch (error) {
+    console.error("Transaction submit error:", error);
+
+    alert("Не удалось сохранить операцию. Попробуйте ещё раз.");
+
+    // Возвращаем кнопку в обычное состояние,
+    // потому что окно остаётся открытым.
+    submitButton.disabled = false;
+    submitButton.classList.remove("loading");
+  } finally {
+    isSaving = false;
+
+    submitButton.disabled = false;
+    submitButton.classList.remove("loading");
+  }
 }
 
 function renderTransactions() {
@@ -481,6 +584,8 @@ clearTransactions();
 export {
   addTransaction,
   getTransactions,
+  getCurrentBalance,
+  createBalanceAdjustment,
   getTransactionById,
   updateTransaction,
   deleteTransaction,

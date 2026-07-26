@@ -32,7 +32,11 @@
         </button>
 
         <!-- Balance Card -->
-        <button class="balance-card" type="button">
+        <button
+          class="balance-card"
+          type="button"
+          data-action="open-balance-adjustment"
+        >
           <span class="balance-label">Текущий остаток</span>
 
           <span class="balance-amount">
@@ -346,8 +350,9 @@
               />
             </label>
 
-            <button class="modal-button primary" type="submit">
-              Сохранить
+            <button class="modal-button" type="submit">
+              <span class="button-label">Сохранить</span>
+              <span class="button-spinner" aria-hidden="true"></span>
             </button>
           </form>
         </div>
